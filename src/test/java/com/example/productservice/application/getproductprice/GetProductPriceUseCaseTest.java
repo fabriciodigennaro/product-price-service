@@ -1,6 +1,7 @@
 package com.example.productservice.application.getproductprice;
 
 import com.example.productservice.domain.productprice.BrandId;
+import com.example.productservice.domain.productprice.Price;
 import com.example.productservice.domain.productprice.ProductId;
 import com.example.productservice.domain.productprice.ProductPrice;
 import com.example.productservice.domain.productprice.ProductPriceRepository;
@@ -79,8 +80,7 @@ class GetProductPriceUseCaseTest {
             1,
             productId,
             priority,
-            BigDecimal.TEN,
-            Monetary.getCurrency("EUR")
+            new Price(BigDecimal.TEN, Monetary.getCurrency("EUR"))
         );
     }
 }

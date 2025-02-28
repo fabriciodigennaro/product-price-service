@@ -1,7 +1,5 @@
 package com.example.productservice.domain.productprice;
 
-import javax.money.CurrencyUnit;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 public record ProductPrice(
@@ -11,6 +9,5 @@ public record ProductPrice(
     int priceList,
     ProductId productId,
     int priority,
-    BigDecimal price,
-    CurrencyUnit currency
+    Price price
 ) {}
