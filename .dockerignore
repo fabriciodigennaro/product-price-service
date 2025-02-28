@@ -1,0 +1,20 @@
+
+target/classes/
+target/generated-sources/
+target/generated-test-sources/
+target/maven-archiver/
+target/maven-status/
+target/test-classes/
+
+# Opcional: Si deseas ignorar otros archivos de target, pero no el JAR:
+# !target/*-SNAPSHOT.jar
+
+*.iml
+*.log
+*.md
+*.sh
+dist/
+.idea/
+.vscode/
+.DS_Store
+*.swp
