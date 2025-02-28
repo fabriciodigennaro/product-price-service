@@ -1,0 +1,111 @@
+package com.example.productservice.infrastructure.entrypoint.rest;
+
+import com.example.productservice.application.UseCase;
+import com.example.productservice.application.getproductprice.GetProductPriceRequest;
+import com.example.productservice.application.getproductprice.GetProductPriceResponse;
+import com.example.productservice.application.getproductprice.GetProductPriceUseCase;
+import com.example.productservice.domain.productprice.BrandId;
+import com.example.productservice.domain.productprice.ProductId;
+import com.example.productservice.infrastructure.entrypoint.rest.response.Problem;
+import com.example.productservice.infrastructure.entrypoint.rest.response.ProductPriceResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.time.LocalDateTime;
+
+@RestController
+@RequestMapping("/prices")
+@Tag(
+    name = "Product Price",
+    description = "API for managing and retrieving product prices based on search criteria."
+)
+public class ProductPriceController {
+
+    private final UseCase<GetProductPriceRequest, GetProductPriceResponse> getProductPriceUseCase;
+
+    public ProductPriceController(UseCase<GetProductPriceRequest, GetProductPriceResponse> getProductPriceUseCase) {
+        this.getProductPriceUseCase = getProductPriceUseCase;
+    }
+
+    @Operation(
+        summary = "Get a product price",
+        description = "Fetches the price of a product valid at a provided date filtering by product ID and brand ID."
+    )
+    @ApiResponses(value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Successful response",
+            content = {
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ProductPriceResponse.class)
+                )
+            }
+        ),
+        @ApiResponse(
+            responseCode = "404",
+            description = "Price not found for given parameters.",
+            content = {
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = Problem.class)
+                )
+            }
+        ),
+        @ApiResponse(
+            responseCode = "500",
+            description = "Internal server error",
+            content = {
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = Problem.class)
+                )
+            }
+        )
+    })
+    @GetMapping
+    @ResponseStatus(HttpStatus.OK)
+    public ResponseEntity<Object> getProductPrice(
+        @Parameter(example = "35455") @RequestParam long productId,
+        @Parameter(example = "1") @RequestParam long brandId,
+        @Parameter(example = "2020-06-14T15:50:00") @RequestParam LocalDateTime validAt
+    ) {
+
+        GetProductPriceRequest request = new GetProductPriceRequest(
+            new ProductId(productId),
+            new BrandId(brandId),
+            validAt
+        );
+        GetProductPriceResponse productPrice = getProductPriceUseCase.execute(request);
+
+        return switch (productPrice) {
+            case GetProductPriceResponse.Successful response -> ResponseEntity.ok(
+                new ProductPriceResponse(
+                    response.getProductPrice().productId().value(),
+                    response.getProductPrice().brandId().value(),
+                    response.getProductPrice().priceList(),
+                    response.getProductPrice().startDate(),
+                    response.getProductPrice().endDate(),
+                    response.getProductPrice().price().amount(),
+                    response.getProductPrice().price().currency().getCurrencyCode()
+                )
+            );
+            case GetProductPriceResponse.ProductPriceNotFound ignored -> {
+                Problem problem = new Problem("Price not found for given parameters.");
+                yield ResponseEntity.status(HttpStatus.NOT_FOUND).body(problem);
+            }
+        };
+    }
+}
